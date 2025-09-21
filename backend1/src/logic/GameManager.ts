@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import { INIT_GAME } from "./message.js";
+import { INIT_GAME, MOVE, INIT_TIMED_GAME } from "./message.js";
 import { Game } from "./Game.js";
 
 export class GameManager {
@@ -29,13 +29,29 @@ export class GameManager {
 
             if(message.type === INIT_GAME){
                 if(this.pendingUser){
-                    const game = new Game(this.pendingUser, socket);
+                    const game = new Game(this.pendingUser, socket, false);
                     this.games.push(game);
                     this.pendingUser = null;
                 } else {
                     this.pendingUser = socket;
                 }
+            }
 
+            if(message.type === INIT_TIMED_GAME){
+                if(this.pendingUser){
+                    const game = new Game(this.pendingUser, socket, true);
+                    this.games.push(game);
+                    this.pendingUser = null;
+                } else {
+                    this.pendingUser = socket;
+                }
+            }
+
+            if(message.type === MOVE){
+                const game = this.games.find(game => game.player1 === socket || game.player2 === socket);
+                if(game){
+                    game.makeMove(socket, message.move);
+                }
             }
         })
     }
